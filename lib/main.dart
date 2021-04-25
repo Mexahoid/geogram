@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'globals.dart' as globals;
 
 void main() => runApp(MyApp());
 
@@ -404,16 +405,14 @@ class OnboardingSecond extends StatelessWidget {
 }
 
 Future<void> _showMyDialog(
-    BuildContext context, String title, String message, Widget ch) async {
+    BuildContext context, Text title, String message, Widget ch,
+    [String okText = 'Ок']) async {
   return showDialog<void>(
     context: context,
     barrierDismissible: false, // user must tap button!
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text(
-          title,
-          style: TextStyle(color: Colors.red),
-        ),
+        title: title,
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[Text(message), ch != null ? ch : Container()],
@@ -422,7 +421,7 @@ Future<void> _showMyDialog(
         actions: <Widget>[
           TextButton(
             child: Text(
-              'Ок',
+              okText,
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () {
@@ -450,6 +449,12 @@ class _AuthorizationState extends State<Authorization> {
   @override
   Widget build(BuildContext context) {
     var a = MediaQuery.of(context).viewInsets.bottom;
+
+    final loginController = TextEditingController();
+    loginController.text = 'zsa';
+    final passController = TextEditingController();
+    passController.text = 'zsa';
+
     setState(() {
       if (a > 1) {
         _bigTextSize = 18;
@@ -592,11 +597,19 @@ class _AuthorizationState extends State<Authorization> {
                                       child: Padding(
                                           padding: EdgeInsets.only(
                                               left: 20, right: 20),
-                                          child: TextField(
-                                            decoration: InputDecoration(
-                                                border: OutlineInputBorder(),
-                                                hintText: 'Логин'),
-                                          )))),
+                                          child: Row(children: [
+                                            Padding(
+                                                padding:
+                                                    EdgeInsets.only(right: 15),
+                                                child: Icon(Icons
+                                                    .account_circle_rounded)),
+                                            Expanded(
+                                                child: TextField(
+                                              controller: loginController,
+                                              decoration: InputDecoration(
+                                                  border: OutlineInputBorder()),
+                                            ))
+                                          ])))),
                               SizedBox(
                                 height: 20.0,
                               ),
@@ -605,12 +618,18 @@ class _AuthorizationState extends State<Authorization> {
                                   child: Padding(
                                       padding:
                                           EdgeInsets.only(left: 20, right: 20),
-                                      child: TextField(
-                                        obscureText: true,
-                                        decoration: InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Пароль'),
-                                      ))),
+                                      child: Row(children: [
+                                        Padding(
+                                            padding: EdgeInsets.only(right: 15),
+                                            child: Icon(Icons.lock)),
+                                        Expanded(
+                                            child: TextField(
+                                          obscureText: true,
+                                          controller: passController,
+                                          decoration: InputDecoration(
+                                              border: OutlineInputBorder()),
+                                        ))
+                                      ]))),
                             ])),
                     Container(
                       child: Row(
@@ -636,8 +655,22 @@ class _AuthorizationState extends State<Authorization> {
                                     style: TextStyle(fontSize: 20)),
                               ),
                               onPressed: () {
-                                _showMyDialog(context, 'Ошибка',
-                                    'Неверный логин или пароль.', null);
+                                var login = loginController.text;
+                                var password = passController.text;
+
+                                if (login == 'zsa' && password == 'zsa') {
+                                  globals.isLoggedIn = true;
+
+                                  Navigator.of(context).pushReplacement(
+                                      _createRoute(AnonTest()));
+                                } else {
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Неверный логин или пароль.',
+                                      null);
+                                }
                               },
                             ),
                           ),
@@ -683,22 +716,58 @@ class _RegistrationState extends State<Registration> {
   double _bigTextSize = 36;
   double _littleTextSize = 24;
   double _contHeight = 30;
-  double _inpHeight = 30;
+  double _inset = 10;
+  double _radius = 70;
   int _delay = 300;
+
+  File _image;
+  Image _img;
+  final picker = ImagePicker();
+
+  Future getPhotoImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      } else {
+        print('Отсутствует фото');
+      }
+    });
+  }
+
+  Future getFileImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      } else {
+        print('Фото не выбрано');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     var a = MediaQuery.of(context).viewInsets.bottom;
+    _img = Image.asset('images/anon.png');
     setState(() {
       if (a > 1) {
         _bigTextSize = 18;
         _littleTextSize = 12;
         _contHeight = 15;
+        _radius = 45;
+        _inset = 5;
       } else {
         _bigTextSize = 36;
         _littleTextSize = 24;
         _contHeight = 30;
+        _radius = 70;
+        _inset = 10;
       }
+      _img =
+          _image == null ? Image.asset('images/anon.png') : Image.file(_image);
     });
 
     return Scaffold(
@@ -744,17 +813,66 @@ class _RegistrationState extends State<Registration> {
                       flex: 1,
                     ),
                     Expanded(
-                      child: Container(
-                        margin: EdgeInsets.all(0.0),
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage('images/anon.png'),
-                            fit: BoxFit.scaleDown,
+                      child: InkWell(
+                        child: Container(
+                          margin: EdgeInsets.all(0.0),
+                          child: CircleAvatar(
+                            backgroundImage: _img.image,
+                            radius: _radius,
                           ),
                         ),
+                        onTap: () {
+                          _showMyDialog(
+                              context,
+                              Text('Откуда загрузить фото?'),
+                              '',
+                              Column(children: [
+                                InkWell(
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(right: 15),
+                                        child: Icon(Icons.camera),
+                                      ),
+                                      Expanded(
+                                        child: InkWell(child: Text('С камеры')),
+                                      )
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    getPhotoImage();
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                Divider(
+                                  color: Colors.white,
+                                ),
+                                InkWell(
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(right: 15),
+                                        child:
+                                            Icon(Icons.photo_library_outlined),
+                                      ),
+                                      Expanded(child: Text('Из системы'))
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    getFileImage();
+                                    Navigator.pop(context);
+                                  },
+                                )
+                              ]),
+                              'Отмена');
+                        },
                       ),
                       flex: 2,
                     ),
+                    Padding(
+                        padding: EdgeInsets.only(top: _inset),
+                        child: Text('Нажмите на аватарку и загрузите своё фото',
+                            style: TextStyle(fontSize: 12))),
                     Expanded(
                         flex: 2,
                         child: Column(
@@ -807,11 +925,17 @@ class _RegistrationState extends State<Registration> {
                                   child: Padding(
                                       padding:
                                           EdgeInsets.only(left: 20, right: 20),
-                                      child: TextField(
-                                        decoration: InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Логин'),
-                                      ))),
+                                      child: Row(children: [
+                                        Padding(
+                                            padding: EdgeInsets.only(right: 15),
+                                            child: Icon(
+                                                Icons.account_circle_rounded)),
+                                        Expanded(
+                                            child: TextField(
+                                          decoration: InputDecoration(
+                                              border: OutlineInputBorder()),
+                                        ))
+                                      ]))),
                               SizedBox(
                                 height: 15.0,
                               ),
@@ -820,12 +944,17 @@ class _RegistrationState extends State<Registration> {
                                   child: Padding(
                                       padding:
                                           EdgeInsets.only(left: 20, right: 20),
-                                      child: TextField(
-                                        obscureText: true,
-                                        decoration: InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Пароль'),
-                                      ))),
+                                      child: Row(children: [
+                                        Padding(
+                                            padding: EdgeInsets.only(right: 15),
+                                            child: Icon(Icons.lock)),
+                                        Expanded(
+                                            child: TextField(
+                                          obscureText: true,
+                                          decoration: InputDecoration(
+                                              border: OutlineInputBorder()),
+                                        ))
+                                      ]))),
                               SizedBox(
                                 height: 15.0,
                               ),
@@ -834,7 +963,29 @@ class _RegistrationState extends State<Registration> {
                                   child: Padding(
                                       padding:
                                           EdgeInsets.only(left: 20, right: 20),
-                                      child: TextField(
+                                      child: Row(
+                                        children: [
+                                          Padding(
+                                              padding:
+                                                  EdgeInsets.only(right: 15),
+                                              child: Icon(Icons.mail)),
+                                          Expanded(
+                                              child: TextField(
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            controller: emailController,
+                                            onChanged: (enteredEmail) =>
+                                                validateEmail(enteredEmail),
+                                            decoration: InputDecoration(
+                                                labelText: message,
+                                                labelStyle: TextStyle(
+                                                    color: Colors.red),
+                                                border: OutlineInputBorder()),
+                                          ))
+                                        ],
+                                      )))
+
+                              /*child: TextField(
                                         keyboardType:
                                             TextInputType.emailAddress,
                                         controller: emailController,
@@ -846,7 +997,7 @@ class _RegistrationState extends State<Registration> {
                                                 TextStyle(color: Colors.red),
                                             border: OutlineInputBorder(),
                                             hintText: 'Электронная почта'),
-                                      ))),
+                                      ))),*/
                             ])),
                     Container(
                       child: Row(
@@ -871,8 +1022,12 @@ class _RegistrationState extends State<Registration> {
                                     style: TextStyle(fontSize: 20)),
                               ),
                               onPressed: () {
-                                _showMyDialog(context, 'Ошибка',
-                                    'Неверные регистрационные данные.', null);
+                                _showMyDialog(
+                                    context,
+                                    Text('Ошибка',
+                                        style: TextStyle(color: Colors.red)),
+                                    'Неверные регистрационные данные.',
+                                    null);
                               },
                             ),
                           ),
@@ -935,6 +1090,7 @@ class MyLeftDrawer extends StatelessWidget {
             ),
             color: Colors.amber,
           ),
+          child: null,
         ),
         ListTile(
             title: Text(
@@ -961,6 +1117,7 @@ class MyLeftDrawer extends StatelessWidget {
 }
 
 class MyRightDrawerAnon extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -968,27 +1125,47 @@ class MyRightDrawerAnon extends StatelessWidget {
       children: [
         DrawerHeader(
           margin: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('images/anon.png'),
-              fit: BoxFit.fitHeight,
-            ),
-          ),
+          child: Column(children: [
+            CircleAvatar(
+              backgroundImage: AssetImage(globals.isLoggedIn
+                  ? 'images/morda.jpg'
+                  : 'images/anon.png'), //),
+              radius: 65,
+            )
+          ]),
         ),
         Center(
-          child: Text('Анонимный режим'),
+          child:
+              Text(globals.isLoggedIn ? globals.username : 'Анонимный режим'),
         ),
         Divider(),
         ListTile(
-          title: Text('Авторизация'),
+          title: Text(globals.isLoggedIn ? 'Личный кабинет' : 'Авторизация'),
           leading: Icon(Icons.account_circle_rounded),
           onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => Authorization())); // close the drawer
+            if (globals.isLoggedIn)
+              _showMyDialog(
+                  context, Text('Ошибка'), 'Еще не реализовано', null);
+            else
+
+              Navigator.of(context).pushReplacement(
+                  _createRoute(Authorization())); // close the drawer
           },
         ),
+        (() {
+          if (globals.isLoggedIn) {
+            return ListTile(
+              title: Text('Выйти из профиля'),
+              leading: Icon(Icons.logout),
+              onTap: () {
+                globals.isLoggedIn = false;
+                Navigator.of(context).pushReplacement(
+                    _createRoute(AnonTest()));
+              },
+            );
+          }
+          return Container();
+        }())
       ],
     ));
   }
@@ -1001,6 +1178,8 @@ class AnonTest extends StatefulWidget {
 
 class _AnonTestState extends State<AnonTest> {
   GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
+  AssetImage _img =
+      AssetImage(globals.isLoggedIn ? 'images/morda.jpg' : 'images/anon.png');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1014,12 +1193,24 @@ class _AnonTestState extends State<AnonTest> {
                   context, MaterialPageRoute(builder: (context) => AddPhoto()));
             }),
         actions: [
-          IconButton(
-            icon: Image.asset('images/anon.png'),
-            onPressed: () {
-              _scaffoldKey.currentState.openEndDrawer();
-            },
-          ),
+          Padding(
+              padding: EdgeInsets.only(right: 15),
+              child: InkWell(
+                child: Row(children: [
+                  CircleAvatar(
+                    backgroundImage: _img, //),
+                    radius: 20,
+                  )
+                ]),
+                onTap: () {
+                  _scaffoldKey.currentState.openEndDrawer();
+                  setState(() {
+                    _img = AssetImage(globals.isLoggedIn
+                        ? 'images/morda.jpg'
+                        : 'images/anon.png');
+                  });
+                },
+              ))
         ],
       ),
       drawer: MyLeftDrawer(),
@@ -1060,7 +1251,7 @@ Future<bool> isNetworkAvailable() async {
       //debugPrint('true');
       return true;
     }
-  } on SocketException catch (e) {
+  } on SocketException catch (_) {
     //debugPrint('exc: ${e.message}');
     return false;
   }
@@ -1084,12 +1275,13 @@ Image getAvatarImage() {
   bool flag = false;
   Image img;
   if (flag) {
-    img = Image.network('https://picsum.photos/50/50/?random',
-      fit: BoxFit.cover,);
+    img = Image.network(
+      'https://picsum.photos/50/50/?random',
+      fit: BoxFit.cover,
+    );
   } //on SocketException catch (e)
   else {
-    img = Image.asset('images/anon.png',
-      fit: BoxFit.scaleDown);
+    img = Image.asset('images/anon.png', fit: BoxFit.scaleDown);
   }
   return img;
 }
@@ -1123,30 +1315,26 @@ class _GridDemoPhotoItem extends StatelessWidget {
             },
         child: GridTile(
           footer: Material(
-            color: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(4)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child:
-            SizedBox(
-              height: 30,
-              child: GridTileBar(
-
-                backgroundColor: Colors.black45,
-                title: Row(
-                  children: [
-                    CircleAvatar(
+              color: Colors.transparent,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(4)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                height: 30,
+                child: GridTileBar(
+                    backgroundColor: Colors.black45,
+                    title: Row(
+                      children: [
+                        CircleAvatar(
                           backgroundImage: getAvatarImage().image,
                           radius: 10,
                         ),
-                    Expanded(child: Container()),
-                    Text('Автор ${photo.id}'),
-                  ],
-                )
-            ),
-          )
-          ),
+                        Expanded(child: Container()),
+                        Text('Автор ${photo.id % 13 + 1}'),
+                      ],
+                    )),
+              )),
           child: image,
         ));
   }
@@ -1225,8 +1413,6 @@ class _AddPhotoState extends State<AddPhoto> {
 
   @override
   Widget build(BuildContext context) {
-    var auth = false;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Добавление фото'),
@@ -1264,17 +1450,24 @@ class _AddPhotoState extends State<AddPhoto> {
                             heroTag: 'takePhoto',
                             onPressed: getPhotoImage,
                             tooltip: 'Сделать фото',
-                            child: Icon(Icons.add_a_photo),
+                            child: Icon(Icons.camera),
                           )),
                       Padding(
                           padding: EdgeInsets.all(15),
                           child: FloatingActionButton(
                             heroTag: 'loadPhoto',
                             onPressed: getFileImage,
+                            //onPressed: () => {getPhoto(false)},
                             tooltip: 'Загрузить фото',
-                            child: Icon(Icons.library_add),
+                            child: Icon(Icons.photo_library_outlined),
                           )),
                     ]),
+                    Padding(
+                        padding: EdgeInsets.all(10),
+                        child: TextField(
+                          decoration:
+                              InputDecoration(border: OutlineInputBorder()),
+                        )),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Padding(
                           padding: EdgeInsets.all(15),
@@ -1282,40 +1475,24 @@ class _AddPhotoState extends State<AddPhoto> {
                             onPressed: () => {
                               if (_image == null)
                                 {
-                                  _showMyDialog(context, 'Ошибка',
-                                      'Отсутствует фото для публикации', null),
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Отсутствует фото для публикации',
+                                      null),
                                 }
                               else
                                 {
-                                  if (!auth)
+                                  if (!globals.isLoggedIn)
                                     {
-                                      _showMyDialog(
-                                          context,
-                                          'Ошибка',
-                                          'Вы не авторизовались',
-                                          Column(
-                                            children: [
-                                              Divider(),
-                                              InkWell(
-                                                  child: Text(
-                                                    'Авторизация',
-                                                    style: TextStyle(
-                                                      fontFamily: 'Roboto',
-                                                      decoration: TextDecoration
-                                                          .underline,
-                                                      color: Colors.black,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                Authorization())); //
-                                                  }),
-                                            ],
-                                          ))
+                                      showAuthError(context)
+                                    }
+                                  else
+                                    {
+                                      _showMyDialog(context, Text(':('),
+                                          'Еще не реализовано', null)
+                                      // todo: Реализовать
                                     }
                                 }
                             },
@@ -1344,6 +1521,36 @@ class _AddPhotoState extends State<AddPhoto> {
           ]),
     );
   }
+}
+
+void showAuthError(BuildContext context) {
+  _showMyDialog(
+      context,
+      Text('Ошибка', style: TextStyle(color: Colors.red)),
+      'Вы не авторизовались',
+      Column(
+        children: [
+          Divider(
+            color: Colors.white,
+          ),
+          InkWell(
+              child: Text(
+                'Авторизация',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  decoration: TextDecoration.underline,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Authorization())); //
+              }),
+        ],
+      ));
 }
 
 class ViewPhoto extends StatefulWidget {
@@ -1413,7 +1620,7 @@ class _ViewPhotoState extends State<ViewPhoto> {
                               ),
                               Padding(
                                   padding: EdgeInsets.only(left: 20),
-                                  child: Text('Автор ${widget.id}')),
+                                  child: Text('Автор ${widget.id % 13 + 1}')),
                               Expanded(child: Container()),
                               Expanded(
                                 flex: 3,
@@ -1425,11 +1632,15 @@ class _ViewPhotoState extends State<ViewPhoto> {
                                           : Icons.favorite_border),
                                       onPressed: () {
                                         setState(() {
-                                          if (liked)
-                                            likes--;
-                                          else
-                                            likes++;
-                                          liked = !liked;
+                                          if (!globals.isLoggedIn) {
+                                            showAuthError(context);
+                                          } else {
+                                            if (liked)
+                                              likes--;
+                                            else
+                                              likes++;
+                                            liked = !liked;
+                                          }
                                         });
                                       },
                                     )),
@@ -1437,45 +1648,9 @@ class _ViewPhotoState extends State<ViewPhoto> {
                             ],
                           ),
                         ),
-                        ListTile(title: Text('Sample text'))
+                        ListTile(title: Text('Моя любимая фотка, Автор ${widget.id % 13 + 1}™®©'))
                       ],
                     )),
-
-                    /*Container(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            child: TextButton(
-                              style: ButtonStyle(
-                                backgroundColor:
-                                    MaterialStateProperty.resolveWith<Color>(
-                                  (Set<MaterialState> states) {
-                                    return Color.fromRGBO(173, 117, 90,
-                                        1.0); // Use the component's default.
-                                  },
-                                ),
-                              ),
-                              child: Container(
-                                height: 30.0,
-                                width: 120.0,
-                                alignment: Alignment.center,
-                                child: Text('Понятно',
-                                    style: TextStyle(fontSize: 20)),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            OnboardingSecond()));
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    )*/
                   ],
                 ),
               ),
