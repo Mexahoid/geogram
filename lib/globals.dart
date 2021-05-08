@@ -19,11 +19,21 @@ class MyPhoto {
   {
     liked = !liked;
   }
+
+  bool isReady()
+  {
+    return image != null && image240 != null && authorAvatar != null;
+  }
 }
 
 var arr = List<int>.filled(100, 0);
+var photoIds;
 
-int id;
+var allPhotos;// = <MyPhoto>[];
+var myPhotos = <MyPhoto>[];
+
+
+int id = -1;
 bool isLoggedIn = false;
 String username = 'Вася Пупкин';
 String address = 'https://geogramserver.conveyor.cloud/';
@@ -36,11 +46,10 @@ MemoryImage avatar120px;
 bool av120Loaded = false;
 
 
-final allPhotos = <MyPhoto>[];
-final myPhotos = <MyPhoto>[];
 
 void logout()
 {
+  id = -1;
   isLoggedIn = false;
   avatarOriginal = null;
   avOrigLoaded = false;
@@ -48,6 +57,7 @@ void logout()
   av20Loaded = false;
   avatar120px = null;
   av120Loaded = false;
+  myPhotos = <MyPhoto>[];
 }
 
 

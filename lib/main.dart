@@ -17,24 +17,83 @@ import 'dart:io';
 import 'dart:convert';
 import 'globals.dart' as globals;
 import 'globals.dart';
+import 'networking.dart';
 
 void main() => runApp(MyApp());
 
 void generateNewNumbers() {
-  int id;
   for (int i = 0; i < 100; i++) {
     fetchRandomPhoto().then((value) {
-      id = int.parse(value['args'][1]);
-      arr[i] = id;
-      debugPrint('$i done');
+      arr[i] = int.parse(value['args'][1]);
+      //debugPrint('$i done');
     });
   }
+
+  fetchPhotoIds().then((value) {
+    var tmp = value['args'];
+    photoIds = List<int>.filled(tmp.length - 1, 0);
+    for (int i = 1; i < tmp.length; i++) {
+      photoIds[i-1] = int.parse(value['args'][i]);
+    }
+  }).whenComplete(() {
+    allPhotos = List<MyPhoto>.filled(photoIds.length, null);
+
+    for (int i = 0; i < photoIds.length; i++) {
+      bool ok;
+      var val;
+
+      fetchOriginalPhoto(photoIds[i], globals.id).then((value) {
+        ok = value['args'][0] == 'Ok';
+        val = value;
+        var photo;
+
+        if (ok) {
+          int likes = int.parse(value['args'][1]);
+          bool liked = value['args'][2] == '1';
+          int authorId = int.parse(value['args'][3]);
+          String authorName = value['args'][4];
+          String text = value['args'][5];
+          String data = value['args'][6];
+          var image = decodeImage(data);
+          photo = globals.MyPhoto(authorId, image, likes, text, photoIds[i], authorName, null, null, liked);
+          allPhotos[i] = photo;
+
+
+          if (globals.isLoggedIn) {
+            if (allPhotos[i].authorId == globals.id) {
+                myPhotos.add(allPhotos[i]);
+                debugPrint('[MyPhoto found: ${allPhotos[i].id}]');
+            }
+          }
+
+          fetch240Photo(photoIds[i]).then((vv) {
+            ok = vv['args'][0] == 'Ok';
+            if (ok) {
+              while(allPhotos[i] == null)
+                continue;
+              allPhotos[i].image240 = decodeImage(vv['args'][1]);
+              debugPrint('[Image240 init: ${allPhotos[i].id}]');
+            }
+          });
+          fetchAvatar(authorId, 120).then((vvv) {
+            ok = vvv['args'][0] == 'Ok';
+            if (ok) {
+              while(allPhotos[i] == null)
+                continue;
+              allPhotos[i].authorAvatar = decodeImage(vvv['args'][1]);
+              debugPrint('[Avatar init: ${allPhotos[i].id}]');
+            }
+          });
+        }
+      });
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    generateNewNumbers();
+    //generateNewNumbers();
 
     return MaterialApp(
       title: 'Geogram',
@@ -460,170 +519,6 @@ Future<void> _showMyDialog(
 class Authorization extends StatefulWidget {
   @override
   _AuthorizationState createState() => _AuthorizationState();
-}
-
-Future<Map<String, dynamic>> fetchAuth(String login, String pass) async {
-  debugPrint('[start fetch auth]');
-  final url = Uri.parse(
-      globals.address + 'author/auth/login/' + login + '/pass/' + pass);
-  Response response = await get(url);
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint('[fetched auth]');
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchRandomPhoto() async {
-  debugPrint('[start fetch random photo]');
-  final url = Uri.parse(globals.address + 'photo/getrandomphoto');
-  Response response = await get(url);
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint(json);
-  debugPrint('[fetched random photo]');
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchLikeDislike(int photoId, int userId) async {
-  final url =
-      Uri.parse(globals.address + 'photo/likephoto/pid/$photoId/aid/$userId');
-  Response response = await get(url);
-
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint('fetch likeDislike');
-  debugPrint(test['args'][0]);
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchOriginalPhoto(int photoId, int userId) async {
-  debugPrint('[start fetch original photo]');
-  final url =
-      Uri.parse(globals.address + 'photo/getphoto/pid/$photoId/aid/$userId');
-  Response response = await get(url);
-
-  String json = response.body;
-  debugPrint(json);
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint('[fetched original photo]');
-  return test;
-}
-
-Future<Map<String, dynamic>> fetch240Photo(int photoId) async {
-  debugPrint('[start fetch 240 photo]');
-  final url = Uri.parse(globals.address + 'photo/getphoto240/pid/$photoId');
-  Response response = await get(url);
-
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint('[fetched 240 photo]');
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchRegister(String login, String pass) async {
-  debugPrint('[start fetch register]');
-  final url =
-      Uri.parse(globals.address + 'author/register/login/$login/pass/$pass');
-  Response response = await get(url);
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint('[fetched register]');
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchSetName(int id, String name) async {
-  final url = Uri.parse(globals.address + 'author/setname/id/$id/name/$name');
-  Response response = await get(url);
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint(json);
-  debugPrint(test['args'][1]);
-  return test;
-}
-
-class SendImage {
-  final int id;
-  final String data;
-  final String ext;
-  final String text;
-
-  SendImage(
-      {@required this.id,
-      @required this.data,
-      @required this.text,
-      @required this.ext});
-
-  factory SendImage.fromJson(Map<String, dynamic> json) {
-    return SendImage(
-      id: json['Id'],
-      data: json['Data'],
-      ext: json['Extension'],
-      text: json['Text'],
-    );
-  }
-}
-
-Future<Map<String, dynamic>> fetchAddPhoto(SendImage si) async {
-  final url = Uri.parse(globals.address + 'photo/addphoto');
-
-  var tstt = jsonEncode({
-    "Id": si.id,
-    "Data": '${si.data}',
-    "Extension": '${si.ext}',
-    "Text": '${si.text}',
-  });
-  Response response = await post(
-    url,
-    body: tstt,
-    headers: {
-      //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  );
-  debugPrint('Send Image');
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint(json);
-  debugPrint(test['args'][0]);
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchAddAvatar(SendImage si) async {
-  final url = Uri.parse(globals.address + 'author/setavatar');
-  debugPrint('523');
-  debugPrint('si id ${si.id}');
-  var tstt = jsonEncode({
-    "Id": si.id,
-    "Data": '${si.data}',
-    "Extension": '${si.ext}',
-    "Text": '${si.text}',
-  });
-  Response response = await post(
-    url,
-    body: tstt,
-    headers: {
-      //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  );
-  debugPrint('Send Image');
-  //debugPrint(tstt);
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  debugPrint(json);
-  debugPrint(test['args'][0]);
-  return test;
-}
-
-Future<Map<String, dynamic>> fetchAvatar(int id, int px) async {
-  final url = Uri.parse(globals.address + 'author/getavatar/id/$id/px/$px');
-  Response response = await get(url);
-  debugPrint("awaiting $px avatar");
-  String json = response.body;
-  Map<String, dynamic> test = jsonDecode(json);
-  log(test['args'][0]);
-  //debugPrint(test['args'][1]);
-  return test;
 }
 
 class _AuthorizationState extends State<Authorization> {
@@ -2057,7 +1952,7 @@ class GridListDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-        // itemCount: _data.length,
+        itemCount: arr.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
         ),
@@ -2150,7 +2045,7 @@ class GridListAuthorDemo extends StatelessWidget {
     );*/
 
     return GridView.builder(
-        itemCount: 35,
+        itemCount: arr.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
         ),
