@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'globals.dart' as globals;
+import 'globals.dart';
 
 void main() => runApp(MyApp());
 
@@ -450,14 +451,71 @@ class Authorization extends StatefulWidget {
 }
 
 Future<Map<String, dynamic>> fetchAuth(String login, String pass) async {
+  debugPrint('[start fetch auth]');
   final url = Uri.parse(
       globals.address + 'author/auth/login/' + login + '/pass/' + pass);
   Response response = await get(url);
-  Map<String, String> headers = response.headers;
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint('[fetched auth]');
+  return test;
+}
+
+Future<Map<String, dynamic>> fetchRandomPhoto() async {
+  debugPrint('[start fetch random photo]');
+  final url = Uri.parse(
+      globals.address + 'photo/getrandomphoto');
+  Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
   debugPrint(json);
-  debugPrint(test['args'][1]);
+  debugPrint('[fetched random photo]');
+  return test;
+}
+
+Future<Map<String, dynamic>> fetchLikeDislike(int photoId, int userId) async {
+  final url = Uri.parse(globals.address + 'photo/likephoto/pid/$photoId/aid/$userId');
+  Response response = await get(url);
+
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint('fetch likeDislike');
+  debugPrint(test['args'][0]);
+  return test;
+}
+
+
+Future<Map<String, dynamic>> fetchOriginalPhoto(int photoId, int userId) async {
+  debugPrint('[start fetch original photo]');
+  final url = Uri.parse(globals.address + 'photo/getphoto/pid/$photoId/aid/$userId');
+  Response response = await get(url);
+
+  String json = response.body;
+  debugPrint(json);
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint('[fetched original photo]');
+  return test;
+}
+
+Future<Map<String, dynamic>> fetch240Photo(int photoId) async {
+  debugPrint('[start fetch 240 photo]');
+  final url = Uri.parse(globals.address + 'photo/getphoto240/pid/$photoId');
+  Response response = await get(url);
+
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint('[fetched 240 photo]');
+  return test;
+}
+
+Future<Map<String, dynamic>> fetchRegister(String login, String pass) async {
+  debugPrint('[start fetch register]');
+  final url = Uri.parse(
+      globals.address + 'author/register/login/$login/pass/$pass');
+  Response response = await get(url);
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint('[fetched register]');
   return test;
 }
 
@@ -472,13 +530,79 @@ Future<Map<String, dynamic>> fetchSetName(int id, String name) async {
   return test;
 }
 
+
+class SendImage {
+  final int id;
+  final String data;
+  final String ext;
+  final String text;
+
+  SendImage({@required this.id, @required this.data, @required this.text, @required this.ext});
+
+  factory SendImage.fromJson(Map<String, dynamic> json) {
+    return SendImage(
+      id: json['Id'],
+      data: json['Data'],
+      ext: json['Extension'],
+      text: json['Text'],
+    );
+  }
+}
+
+Future<Map<String, dynamic>> fetchAddPhoto(SendImage si) async {
+  final url = Uri.parse(
+      globals.address + 'photo/addphoto');
+
+  var tstt = jsonEncode({
+    "Id": si.id,
+    "Data": '${si.data}',
+    "Extension": '${si.ext}',
+    "Text": '${si.text}',
+  });
+  Response response = await post(url, body: tstt,
+    headers: {
+      //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  );
+  debugPrint('Send Image');
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint(json);
+  debugPrint(test['args'][0]);
+  return test;
+}
+
+Future<Map<String, dynamic>> fetchAddAvatar(SendImage si) async {
+  final url = Uri.parse(
+      globals.address + 'author/setavatar');
+  debugPrint('523');
+  debugPrint('si id ${si.id}');
+  var tstt = jsonEncode({
+    "Id": si.id,
+    "Data": '${si.data}',
+    "Extension": '${si.ext}',
+    "Text": '${si.text}',
+  });
+  Response response = await post(url, body: tstt,
+    headers: {
+    //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+    "Content-Type": "application/json; charset=utf-8",
+  },
+  );
+  debugPrint('Send Image');
+  //debugPrint(tstt);
+  String json = response.body;
+  Map<String, dynamic> test = jsonDecode(json);
+  debugPrint(json);
+  debugPrint(test['args'][0]);
+  return test;
+}
+
 Future<Map<String, dynamic>> fetchAvatar(int id, int px) async {
   final url = Uri.parse(globals.address + 'author/getavatar/id/$id/px/$px');
   Response response = await get(url);
   debugPrint("awaiting $px avatar");
-  int statusCode = response.statusCode;
-  Map<String, String> headers = response.headers;
-  String contentType = headers['content-type'];
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
   log(test['args'][0]);
@@ -852,6 +976,7 @@ class _RegistrationState extends State<Registration> {
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
+        imageLoaded = true;
       } else {
         print('Отсутствует фото');
       }
@@ -864,11 +989,14 @@ class _RegistrationState extends State<Registration> {
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
+        imageLoaded = true;
       } else {
         print('Фото не выбрано');
       }
     });
   }
+
+  bool imageLoaded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -891,6 +1019,7 @@ class _RegistrationState extends State<Registration> {
       _img =
           _image == null ? Image.asset('images/anon.png') : Image.file(_image);
     });
+
 
     return Scaffold(
       body: Column(
@@ -1054,6 +1183,7 @@ class _RegistrationState extends State<Registration> {
                                                 Icons.account_circle_rounded)),
                                         Expanded(
                                             child: TextField(
+                                              controller: loginController,
                                           decoration: InputDecoration(
                                               border: OutlineInputBorder()),
                                         ))
@@ -1072,6 +1202,7 @@ class _RegistrationState extends State<Registration> {
                                             child: Icon(Icons.lock)),
                                         Expanded(
                                             child: TextField(
+                                              controller: passController,
                                           obscureText: true,
                                           decoration: InputDecoration(
                                               border: OutlineInputBorder()),
@@ -1093,6 +1224,7 @@ class _RegistrationState extends State<Registration> {
                                               child: Icon(Icons.mail)),
                                           Expanded(
                                               child: TextField(
+                                                key: Key('EmailTextField'),
                                             keyboardType:
                                                 TextInputType.emailAddress,
                                             controller: emailController,
@@ -1107,19 +1239,6 @@ class _RegistrationState extends State<Registration> {
                                         ],
                                       )))
 
-                              /*child: TextField(
-                                        keyboardType:
-                                            TextInputType.emailAddress,
-                                        controller: emailController,
-                                        onChanged: (enteredEmail) =>
-                                            validateEmail(enteredEmail),
-                                        decoration: InputDecoration(
-                                            labelText: message,
-                                            labelStyle:
-                                                TextStyle(color: Colors.red),
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Электронная почта'),
-                                      ))),*/
                             ])),
                     Container(
                       child: Row(
@@ -1144,12 +1263,111 @@ class _RegistrationState extends State<Registration> {
                                     style: TextStyle(fontSize: 20)),
                               ),
                               onPressed: () {
-                                _showMyDialog(
-                                    context,
-                                    Text('Ошибка',
-                                        style: TextStyle(color: Colors.red)),
-                                    'Неверные регистрационные данные.',
-                                    null);
+                                bool ok = false;
+
+                                var login = loginController.text;
+                                var pass = passController.text;
+                                if(login.isEmpty) {
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Не введен логин.',
+                                      null);
+                                }
+                                else if (pass.isEmpty) {
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Не введен пароль.',
+                                      null);
+                                }
+                                else if (message != '') {
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Неверная почта.',
+                                      null);
+                                }
+                                //todo: sas
+                                else if (!imageLoaded) {
+                                  _showMyDialog(
+                                      context,
+                                      Text('Ошибка',
+                                          style: TextStyle(color: Colors.red)),
+                                      'Отсутствует фото.',
+                                      null);
+                                }
+                                else {
+                                  fetchRegister(login, pass)
+                                      .then((value) {
+                                        debugPrint('1241');
+                                    ok = value['args'][0] == 'Ok';
+                                    if(ok) {
+                                      debugPrint('1244');
+                                      globals.id = int.parse(value['args'][1]);
+                                      debugPrint('Value ${value['args']}');
+                                      debugPrint('Author id ${globals.id}');
+                                    }
+                                  })
+                                      .whenComplete(() {
+                                        if(ok) {
+
+                                          debugPrint('1251');
+                                          SendImage si = SendImage(id: globals.id, data: encodeImage(_image), text: 'Аватар', ext: 'jpg');
+
+                                          fetchAddAvatar(si).then((value) {
+                                            debugPrint('Set avatar ${value['args'][0]}');
+                                          })
+                                          .whenComplete(() {
+                                              fetchAuth(login, pass).then((value) {
+                                              ok = value['args'][0] == 'Ok';
+                                              if (ok) {
+                                              globals.username = value['args'][2];
+                                              }
+
+                                              fetchAvatar(globals.id, 0)
+                                                  .then((value) =>
+                                              globals.avatarOriginal =
+                                                  decodeImage(value['args'][1]))
+                                                  .whenComplete(() {
+                                                debugPrint('Original done');
+                                                globals.avOrigLoaded = true;
+                                              });
+
+                                              fetchAvatar(globals.id, 20)
+                                                  .then((value) => globals.avatar20px =
+                                              decodeImage(value['args'][1]))
+                                                  .whenComplete(() {
+                                              debugPrint('20px done');
+                                              globals.av20Loaded = true;
+                                              });
+                                              fetchAvatar(globals.id, 120)
+                                                  .then((value) => globals.avatar120px =
+                                              decodeImage(value['args'][1]))
+                                                  .whenComplete(() {
+                                              debugPrint('120px done');
+                                              globals.av120Loaded = true;
+                                              });
+                                              globals.isLoggedIn = true;
+                                              Navigator.of(context).pushReplacement(_createRoute(AnonTest()));
+                                              });
+                                          });
+
+
+                                          }
+                                        else {
+                                          _showMyDialog(
+                                              context,
+                                              Text('Ошибка',
+                                                  style: TextStyle(color: Colors.red)),
+                                              'Такой пользователь уже существует.',
+                                              null);
+                                        }
+                                  });
+                                }
                               },
                             ),
                           ),
@@ -1165,6 +1383,9 @@ class _RegistrationState extends State<Registration> {
   }
 
   final emailController = TextEditingController();
+
+  final loginController = TextEditingController();
+  final passController = TextEditingController();
 
   String message = '';
   void validateEmail(String enteredEmail) {
@@ -1248,11 +1469,13 @@ class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
   Widget build(BuildContext context) {
 
     var _img;
+    var _name;
 
     setState(() {
       _img = globals.isLoggedIn && globals.avOrigLoaded
           ? globals.avatarOriginal
           : AssetImage('images/anon.png');
+      _name = globals.isLoggedIn ? globals.username : 'Анонимный режим';
     });
 
     return Drawer(
@@ -1269,7 +1492,7 @@ class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
         ),
         Center(
           child:
-              Text(globals.isLoggedIn ? globals.username : 'Анонимный режим'),
+              Text(_name),
         ),
         Divider(),
         ListTile(
@@ -1490,7 +1713,7 @@ class Personal extends StatelessWidget {
                               TextEditingController textController = TextEditingController();
 
                               _showMyDialog(context, Text('Смена имени'), 'Какое новое имя предпочитаете?', Padding(padding: EdgeInsets.all(10),
-                                  child: SizedBox(width: 300, height: 100, child: TestAnimWidget(textController: textController,))),
+                                  child: SizedBox(width: 300, height: 100, child: TestAnimWidget(textController: textController, context: context,))),
                                 "", Row(children: [
                                   TextButton(
                                       onPressed: () {
@@ -1517,7 +1740,8 @@ class Personal extends StatelessWidget {
 
 class TestAnimWidget extends StatefulWidget {
   @override
-  TestAnimWidget({this.textController});
+  TestAnimWidget({this.textController, this.context});
+  final BuildContext context;
   final TextEditingController textController;
   State<StatefulWidget> createState() => _TestAnimWidgetState();
 }
@@ -1571,7 +1795,8 @@ class _TestAnimWidgetState extends State<TestAnimWidget> with SingleTickerProvid
                       ok = value['args'][0] == 'Ok';
                       if (ok) {
                         globals.username = value['args'][1];
-                        Navigator.of(context).pushReplacement(_createRoute(Personal()));
+                        Navigator.of(widget.context).pop();
+                        Navigator.of(widget.context).pushReplacement(_createRoute(Personal())).then((value) => setState(() {}));
                       }
                     });
                   }}
@@ -1599,8 +1824,7 @@ class _Photo {
 
 Future<bool> isNetworkAvailable() async {
   try {
-    final url = Uri.parse(globals.address + 'author/auth');
-    Response response = await get(url);
+    Uri.parse(globals.address + 'author/auth');
     debugPrint('true');
     return true;
   } on SocketException catch (e) {
@@ -1641,13 +1865,20 @@ class _GridDemoPhotoItem extends StatelessWidget {
     Key key,
     @required this.photo,
   }) : super(key: key);
+
+  //todo: ...
   final _Photo photo;
+  //final MyPhoto photo;
 
   @override
   Widget build(BuildContext context) {
     final Widget image = Material(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       clipBehavior: Clip.antiAlias,
+     /* child: Image.memory(
+        photo.image240.bytes, //todo: sas
+        fit: BoxFit.cover,
+      ),*/
       child: Image.asset(
         photo.assetName,
         fit: BoxFit.cover,
@@ -1683,6 +1914,7 @@ class _GridDemoPhotoItem extends StatelessWidget {
                         ),
                         Expanded(child: Container()),
                         Text('Автор ${photo.id % 13 + 1}'),
+//todo:                 Text(photo.authorName),
                         (() {
                           if (globals.isLoggedIn) {
                             return Expanded(child: Container());
@@ -1725,7 +1957,69 @@ Iterable<String> generateNames(int index) sync* {
   }
 }
 
+Iterable<MyPhoto> generatePhotos() sync* {
+    while (true) {
+
+    int id;
+    var photo;
+    fetchRandomPhoto().then((value) {
+      id = int.parse(value['args'][0]);
+    })
+    .whenComplete(() {
+
+      int likes;
+      bool liked;
+      int authorId;
+      String authorName;
+      String text;
+      MemoryImage orig;
+      MemoryImage im240;
+      MemoryImage authAvatar;
+
+      bool ok = false;
+      var val;
+      fetchOriginalPhoto(id, globals.isLoggedIn ? globals.id : -1)
+          .then((value) {
+            ok = value['args'][0] == 'Ok';
+            val = value;
+      })
+          .whenComplete(() {
+            if(ok){
+              likes = int.parse(val['args'][1]);
+              liked = val['args'][2] == '1';
+              authorId = int.parse(val['args'][3]);
+              authorName = val['args'][4];
+              text = val['args'][5];
+              orig = decodeImage(val['args'][6]);
+
+              fetch240Photo(id).then((value) {
+                ok = value['args'][0] == 'Ok';
+                val = value;
+              }).whenComplete(() {
+                if(ok)
+                  {
+                    im240 = decodeImage(val['args'][1]);
+
+                    fetchAvatar(authorId, 120).then((value) {
+                      ok = value['args'][0] == 'Ok';
+                      val = value;
+                    }).whenComplete(() {
+                      authAvatar = decodeImage(val['args'][1]);
+
+                      photo = MyPhoto(authorId, orig, likes, text, id, authorName, im240, authAvatar, liked);
+
+                    });
+                  }
+              });
+            }
+      });
+    });
+      yield photo;
+  }
+}
+
 class GridListDemo extends StatelessWidget {
+  //final _data = <MyPhoto>[];
   final _data = <String>[];
   final random = math.Random();
   @override
@@ -1739,15 +2033,17 @@ class GridListDemo extends StatelessWidget {
           final ii = index % 13;
 
           if (index >= _data.length) {
+            //_data.addAll(generatePhotos().take(2)); /*4*/
             _data.addAll(generateNames(index).take(10)); /*4*/
           }
 
           return new Card(
               child: new GridTile(
             child: _GridDemoPhotoItem(
-                photo: _Photo(
-                    assetName: _data[ii], id: index, liked: random.nextBool())),
-          ));
+//todo:                photo: _data[index]
+                photo: _Photo(assetName: _data[ii], id: index, liked: random.nextBool())),
+            ),
+          );
         });
   }
 }
@@ -1757,6 +2053,7 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
     Key key,
     @required this.photo,
   }) : super(key: key);
+ //todo: final MyPhoto photo;
   final _Photo photo;
 
   @override
@@ -1764,6 +2061,10 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
     final Widget image = Material(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       clipBehavior: Clip.antiAlias,
+     /* todo: child: Image.memory(
+        photo.image240.bytes, //todo: sas
+        fit: BoxFit.cover,
+      ),*/
       child: Image.asset(
         photo.assetName,
         fit: BoxFit.cover,
@@ -1776,8 +2077,7 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) => ViewPhoto(
-                          photo:
-                              photo))), //id: photo.id, liked: photo.liked,))),
+                          photo: photo))), //id: photo.id, liked: photo.liked,))),
               debugPrint('${photo.id} clicked')
             },
         child: GridTile(
@@ -1799,7 +2099,7 @@ class GridListAuthorDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-        // itemCount: _data.length,
+      // itemCount: _data.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
         ),
@@ -1812,10 +2112,10 @@ class GridListAuthorDemo extends StatelessWidget {
 
           return new Card(
               child: new GridTile(
-            child: _GridDemoAuthorPhotoItem(
-                photo: _Photo(
-                    assetName: _data[ii], id: index, liked: random.nextBool())),
-          ));
+                child: _GridDemoAuthorPhotoItem(
+                    photo: _Photo(
+                        assetName: _data[ii], id: index, liked: random.nextBool())),
+              ));
         });
   }
 }
@@ -1852,6 +2152,8 @@ class _AddPhotoState extends State<AddPhoto> {
       }
     });
   }
+
+  TextEditingController controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -1907,6 +2209,7 @@ class _AddPhotoState extends State<AddPhoto> {
                     Padding(
                         padding: EdgeInsets.all(10),
                         child: TextField(
+                          controller: controller,
                           decoration:
                               InputDecoration(border: OutlineInputBorder()),
                         )),
@@ -1914,7 +2217,7 @@ class _AddPhotoState extends State<AddPhoto> {
                       Padding(
                           padding: EdgeInsets.all(15),
                           child: TextButton(
-                            onPressed: () => {
+                            onPressed: () {
                               if (_image == null)
                                 {
                                   _showMyDialog(
@@ -1922,17 +2225,36 @@ class _AddPhotoState extends State<AddPhoto> {
                                       Text('Ошибка',
                                           style: TextStyle(color: Colors.red)),
                                       'Отсутствует фото для публикации',
-                                      null),
+                                      null);
                                 }
                               else
                                 {
                                   if (!globals.isLoggedIn)
-                                    {showAuthError(context)}
+                                    {
+                                      showAuthError(context);
+                                    }
                                   else
                                     {
-                                      _showMyDialog(context, Text(':('),
-                                          'Еще не реализовано', null)
-                                      // todo: Реализовать
+                                        debugPrint('2119');
+                                        SendImage si = SendImage(id: globals.id, data: encodeImage(_image), text: controller.text, ext: 'jpeg');
+                                        bool ok = false;
+                                        fetchAddPhoto(si).then((value) {
+                                          ok = value['args'][0] == 'Ok';
+                                        })
+                                        .whenComplete(() {
+                                          if(ok)
+                                            {
+                                              _showMyDialog(context, Text("Успешно опубликовано"), '', null, '', TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pushReplacement(_createRoute(AnonTest()));
+                                                    },
+                                                  child: Text('Ура, хочу посмотреть в ленте', style: TextStyle(color: Colors.black))));
+
+                                            }
+                                          else {
+                                            _showMyDialog(context, Text("Ошибка"), 'Что-то пошло не так', null);
+                                          }
+                                        });
                                     }
                                 }
                             },
@@ -1993,6 +2315,7 @@ void showAuthError(BuildContext context) {
       ));
 }
 
+
 class ViewPhoto extends StatefulWidget {
   ViewPhoto(
       {Key key,
@@ -2003,6 +2326,8 @@ class ViewPhoto extends StatefulWidget {
 
   //final int id;
   //final bool liked;
+  // todo:
+  //final MyPhoto photo;
   final _Photo photo;
 
   @override
@@ -2012,12 +2337,14 @@ class ViewPhoto extends StatefulWidget {
 class _ViewPhotoState extends State<ViewPhoto> {
   String name;
   int likes = -1;
-
   @override
   Widget build(BuildContext context) {
+
+    //var likes = widget.photo.likes;
     name =
         widget.photo.assetName; //generateNames(widget.photo.id).take(1).first;
     if (likes == -1) likes = widget.photo.id * 15;
+
     return Scaffold(
       appBar: AppBar(
         actions: <Widget>[
@@ -2081,6 +2408,7 @@ class _ViewPhotoState extends State<ViewPhoto> {
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             image: AssetImage(name),
+// todo:                    image: widget.photo.image,
                             fit: BoxFit.cover,
                           ),
                           color: const Color(0xff7c94b6),
@@ -2097,11 +2425,12 @@ class _ViewPhotoState extends State<ViewPhoto> {
                             children: [
                               CircleAvatar(
                                 backgroundImage: getAvatarImage().image,
+// todo:                        backgroundImage: widget.photo.authorAvatar,
                               ),
                               Padding(
                                   padding: EdgeInsets.only(left: 20),
-                                  child: Text(
-                                      'Автор ${widget.photo.id % 13 + 1}')),
+                                  child: Text('Автор ${widget.photo.id % 13 + 1}')),
+//todo:                           child: Text(widget.photo.authorName)),
                               Expanded(child: Container()),
                               Expanded(
                                 flex: 3,
@@ -2116,12 +2445,15 @@ class _ViewPhotoState extends State<ViewPhoto> {
                                           if (!globals.isLoggedIn) {
                                             showAuthError(context);
                                           } else {
-                                            if (widget.photo.liked)
-                                              likes--;
-                                            else
-                                              likes++;
-                                            widget.photo.liked =
-                                                !widget.photo.liked;
+//todo:                                            fetchLikeDislike(widget.photo.id, widget.photo.authorId).then((value) {
+                                              if (widget.photo.liked)
+                                                likes--;
+                                              else
+                                                likes++;
+                                              widget.photo.liked =
+                                              !widget.photo.liked;
+//todo:                                             widget.photo.changeLike();
+//                                            });
                                           }
                                         });
                                       },
@@ -2131,8 +2463,8 @@ class _ViewPhotoState extends State<ViewPhoto> {
                           ),
                         ),
                         ListTile(
-                            title: Text(
-                                'Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
+                            title: Text('Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
+ //todo:                    title: Text(widget.photo.text))
                       ],
                     )),
                   ],
