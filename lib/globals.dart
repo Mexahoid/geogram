@@ -21,6 +21,8 @@ class MyPhoto {
   }
 }
 
+var arr = List<int>.filled(100, 0);
+
 int id;
 bool isLoggedIn = false;
 String username = 'Вася Пупкин';

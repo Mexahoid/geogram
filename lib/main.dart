@@ -20,9 +20,22 @@ import 'globals.dart';
 
 void main() => runApp(MyApp());
 
+void generateNewNumbers() {
+  int id;
+  for (int i = 0; i < 100; i++) {
+    fetchRandomPhoto().then((value) {
+      id = int.parse(value['args'][1]);
+      arr[i] = id;
+      debugPrint('$i done');
+    });
+  }
+}
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    generateNewNumbers();
+
     return MaterialApp(
       title: 'Geogram',
       theme: ThemeData(
@@ -426,19 +439,18 @@ Future<void> _showMyDialog(
             children: <Widget>[Text(message), ch != null ? ch : Container()],
           ),
         ),
-
         actions: <Widget>[
-          okBtn == null ?
-          TextButton(
-            child: Text(
-              okText,
-              style: TextStyle(color: Colors.black),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          )
-          : okBtn,
+          okBtn == null
+              ? TextButton(
+                  child: Text(
+                    okText,
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                )
+              : okBtn,
         ],
       );
     },
@@ -463,8 +475,7 @@ Future<Map<String, dynamic>> fetchAuth(String login, String pass) async {
 
 Future<Map<String, dynamic>> fetchRandomPhoto() async {
   debugPrint('[start fetch random photo]');
-  final url = Uri.parse(
-      globals.address + 'photo/getrandomphoto');
+  final url = Uri.parse(globals.address + 'photo/getrandomphoto');
   Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
@@ -474,7 +485,8 @@ Future<Map<String, dynamic>> fetchRandomPhoto() async {
 }
 
 Future<Map<String, dynamic>> fetchLikeDislike(int photoId, int userId) async {
-  final url = Uri.parse(globals.address + 'photo/likephoto/pid/$photoId/aid/$userId');
+  final url =
+      Uri.parse(globals.address + 'photo/likephoto/pid/$photoId/aid/$userId');
   Response response = await get(url);
 
   String json = response.body;
@@ -484,10 +496,10 @@ Future<Map<String, dynamic>> fetchLikeDislike(int photoId, int userId) async {
   return test;
 }
 
-
 Future<Map<String, dynamic>> fetchOriginalPhoto(int photoId, int userId) async {
   debugPrint('[start fetch original photo]');
-  final url = Uri.parse(globals.address + 'photo/getphoto/pid/$photoId/aid/$userId');
+  final url =
+      Uri.parse(globals.address + 'photo/getphoto/pid/$photoId/aid/$userId');
   Response response = await get(url);
 
   String json = response.body;
@@ -510,8 +522,8 @@ Future<Map<String, dynamic>> fetch240Photo(int photoId) async {
 
 Future<Map<String, dynamic>> fetchRegister(String login, String pass) async {
   debugPrint('[start fetch register]');
-  final url = Uri.parse(
-      globals.address + 'author/register/login/$login/pass/$pass');
+  final url =
+      Uri.parse(globals.address + 'author/register/login/$login/pass/$pass');
   Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
@@ -520,8 +532,7 @@ Future<Map<String, dynamic>> fetchRegister(String login, String pass) async {
 }
 
 Future<Map<String, dynamic>> fetchSetName(int id, String name) async {
-  final url = Uri.parse(
-      globals.address + 'author/setname/id/$id/name/$name');
+  final url = Uri.parse(globals.address + 'author/setname/id/$id/name/$name');
   Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
@@ -530,14 +541,17 @@ Future<Map<String, dynamic>> fetchSetName(int id, String name) async {
   return test;
 }
 
-
 class SendImage {
   final int id;
   final String data;
   final String ext;
   final String text;
 
-  SendImage({@required this.id, @required this.data, @required this.text, @required this.ext});
+  SendImage(
+      {@required this.id,
+      @required this.data,
+      @required this.text,
+      @required this.ext});
 
   factory SendImage.fromJson(Map<String, dynamic> json) {
     return SendImage(
@@ -550,8 +564,7 @@ class SendImage {
 }
 
 Future<Map<String, dynamic>> fetchAddPhoto(SendImage si) async {
-  final url = Uri.parse(
-      globals.address + 'photo/addphoto');
+  final url = Uri.parse(globals.address + 'photo/addphoto');
 
   var tstt = jsonEncode({
     "Id": si.id,
@@ -559,7 +572,9 @@ Future<Map<String, dynamic>> fetchAddPhoto(SendImage si) async {
     "Extension": '${si.ext}',
     "Text": '${si.text}',
   });
-  Response response = await post(url, body: tstt,
+  Response response = await post(
+    url,
+    body: tstt,
     headers: {
       //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
       "Content-Type": "application/json; charset=utf-8",
@@ -574,8 +589,7 @@ Future<Map<String, dynamic>> fetchAddPhoto(SendImage si) async {
 }
 
 Future<Map<String, dynamic>> fetchAddAvatar(SendImage si) async {
-  final url = Uri.parse(
-      globals.address + 'author/setavatar');
+  final url = Uri.parse(globals.address + 'author/setavatar');
   debugPrint('523');
   debugPrint('si id ${si.id}');
   var tstt = jsonEncode({
@@ -584,11 +598,13 @@ Future<Map<String, dynamic>> fetchAddAvatar(SendImage si) async {
     "Extension": '${si.ext}',
     "Text": '${si.text}',
   });
-  Response response = await post(url, body: tstt,
+  Response response = await post(
+    url,
+    body: tstt,
     headers: {
-    //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    "Content-Type": "application/json; charset=utf-8",
-  },
+      //"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+      "Content-Type": "application/json; charset=utf-8",
+    },
   );
   debugPrint('Send Image');
   //debugPrint(tstt);
@@ -841,7 +857,8 @@ class _AuthorizationState extends State<Authorization> {
                                     fetchAuth(login, password).then((value) {
                                       ok = value['args'][0] == 'Ok';
                                       if (ok) {
-                                        globals.id = int.parse(value['args'][1]);
+                                        globals.id =
+                                            int.parse(value['args'][1]);
                                         globals.username = value['args'][2];
                                       }
 
@@ -1020,7 +1037,6 @@ class _RegistrationState extends State<Registration> {
           _image == null ? Image.asset('images/anon.png') : Image.file(_image);
     });
 
-
     return Scaffold(
       body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1183,7 +1199,7 @@ class _RegistrationState extends State<Registration> {
                                                 Icons.account_circle_rounded)),
                                         Expanded(
                                             child: TextField(
-                                              controller: loginController,
+                                          controller: loginController,
                                           decoration: InputDecoration(
                                               border: OutlineInputBorder()),
                                         ))
@@ -1202,7 +1218,7 @@ class _RegistrationState extends State<Registration> {
                                             child: Icon(Icons.lock)),
                                         Expanded(
                                             child: TextField(
-                                              controller: passController,
+                                          controller: passController,
                                           obscureText: true,
                                           decoration: InputDecoration(
                                               border: OutlineInputBorder()),
@@ -1224,7 +1240,7 @@ class _RegistrationState extends State<Registration> {
                                               child: Icon(Icons.mail)),
                                           Expanded(
                                               child: TextField(
-                                                key: Key('EmailTextField'),
+                                            key: Key('EmailTextField'),
                                             keyboardType:
                                                 TextInputType.emailAddress,
                                             controller: emailController,
@@ -1238,7 +1254,6 @@ class _RegistrationState extends State<Registration> {
                                           ))
                                         ],
                                       )))
-
                             ])),
                     Container(
                       child: Row(
@@ -1267,23 +1282,21 @@ class _RegistrationState extends State<Registration> {
 
                                 var login = loginController.text;
                                 var pass = passController.text;
-                                if(login.isEmpty) {
+                                if (login.isEmpty) {
                                   _showMyDialog(
                                       context,
                                       Text('Ошибка',
                                           style: TextStyle(color: Colors.red)),
                                       'Не введен логин.',
                                       null);
-                                }
-                                else if (pass.isEmpty) {
+                                } else if (pass.isEmpty) {
                                   _showMyDialog(
                                       context,
                                       Text('Ошибка',
                                           style: TextStyle(color: Colors.red)),
                                       'Не введен пароль.',
                                       null);
-                                }
-                                else if (message != '') {
+                                } else if (message != '') {
                                   _showMyDialog(
                                       context,
                                       Text('Ошибка',
@@ -1299,73 +1312,74 @@ class _RegistrationState extends State<Registration> {
                                           style: TextStyle(color: Colors.red)),
                                       'Отсутствует фото.',
                                       null);
-                                }
-                                else {
-                                  fetchRegister(login, pass)
-                                      .then((value) {
-                                        debugPrint('1241');
+                                } else {
+                                  fetchRegister(login, pass).then((value) {
+                                    debugPrint('1241');
                                     ok = value['args'][0] == 'Ok';
-                                    if(ok) {
+                                    if (ok) {
                                       debugPrint('1244');
                                       globals.id = int.parse(value['args'][1]);
                                       debugPrint('Value ${value['args']}');
                                       debugPrint('Author id ${globals.id}');
                                     }
-                                  })
-                                      .whenComplete(() {
-                                        if(ok) {
+                                  }).whenComplete(() {
+                                    if (ok) {
+                                      debugPrint('1251');
+                                      SendImage si = SendImage(
+                                          id: globals.id,
+                                          data: encodeImage(_image),
+                                          text: 'Аватар',
+                                          ext: 'jpg');
 
-                                          debugPrint('1251');
-                                          SendImage si = SendImage(id: globals.id, data: encodeImage(_image), text: 'Аватар', ext: 'jpg');
+                                      fetchAddAvatar(si).then((value) {
+                                        debugPrint(
+                                            'Set avatar ${value['args'][0]}');
+                                      }).whenComplete(() {
+                                        fetchAuth(login, pass).then((value) {
+                                          ok = value['args'][0] == 'Ok';
+                                          if (ok) {
+                                            globals.username = value['args'][2];
+                                          }
 
-                                          fetchAddAvatar(si).then((value) {
-                                            debugPrint('Set avatar ${value['args'][0]}');
-                                          })
-                                          .whenComplete(() {
-                                              fetchAuth(login, pass).then((value) {
-                                              ok = value['args'][0] == 'Ok';
-                                              if (ok) {
-                                              globals.username = value['args'][2];
-                                              }
-
-                                              fetchAvatar(globals.id, 0)
-                                                  .then((value) =>
-                                              globals.avatarOriginal =
+                                          fetchAvatar(globals.id, 0)
+                                              .then((value) => globals
+                                                      .avatarOriginal =
                                                   decodeImage(value['args'][1]))
-                                                  .whenComplete(() {
-                                                debugPrint('Original done');
-                                                globals.avOrigLoaded = true;
-                                              });
-
-                                              fetchAvatar(globals.id, 20)
-                                                  .then((value) => globals.avatar20px =
-                                              decodeImage(value['args'][1]))
-                                                  .whenComplete(() {
-                                              debugPrint('20px done');
-                                              globals.av20Loaded = true;
-                                              });
-                                              fetchAvatar(globals.id, 120)
-                                                  .then((value) => globals.avatar120px =
-                                              decodeImage(value['args'][1]))
-                                                  .whenComplete(() {
-                                              debugPrint('120px done');
-                                              globals.av120Loaded = true;
-                                              });
-                                              globals.isLoggedIn = true;
-                                              Navigator.of(context).pushReplacement(_createRoute(AnonTest()));
-                                              });
+                                              .whenComplete(() {
+                                            debugPrint('Original done');
+                                            globals.avOrigLoaded = true;
                                           });
 
-
-                                          }
-                                        else {
-                                          _showMyDialog(
-                                              context,
-                                              Text('Ошибка',
-                                                  style: TextStyle(color: Colors.red)),
-                                              'Такой пользователь уже существует.',
-                                              null);
-                                        }
+                                          fetchAvatar(globals.id, 20)
+                                              .then((value) => globals
+                                                      .avatar20px =
+                                                  decodeImage(value['args'][1]))
+                                              .whenComplete(() {
+                                            debugPrint('20px done');
+                                            globals.av20Loaded = true;
+                                          });
+                                          fetchAvatar(globals.id, 120)
+                                              .then((value) => globals
+                                                      .avatar120px =
+                                                  decodeImage(value['args'][1]))
+                                              .whenComplete(() {
+                                            debugPrint('120px done');
+                                            globals.av120Loaded = true;
+                                          });
+                                          globals.isLoggedIn = true;
+                                          Navigator.of(context).pushReplacement(
+                                              _createRoute(AnonTest()));
+                                        });
+                                      });
+                                    } else {
+                                      _showMyDialog(
+                                          context,
+                                          Text('Ошибка',
+                                              style:
+                                                  TextStyle(color: Colors.red)),
+                                          'Такой пользователь уже существует.',
+                                          null);
+                                    }
                                   });
                                 }
                               },
@@ -1467,7 +1481,6 @@ class MyRightDrawerAnon extends StatefulWidget {
 class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
   @override
   Widget build(BuildContext context) {
-
     var _img;
     var _name;
 
@@ -1491,8 +1504,7 @@ class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
           ]),
         ),
         Center(
-          child:
-              Text(_name),
+          child: Text(_name),
         ),
         Divider(),
         ListTile(
@@ -1514,9 +1526,6 @@ class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
               leading: Icon(Icons.logout),
               onTap: () {
                 globals.logout();
-
-
-
 
                 Navigator.of(context).pushReplacement(_createRoute(AnonTest()));
               },
@@ -1552,12 +1561,16 @@ class _MyRightDrawerAnonState extends State<MyRightDrawerAnon> {
                                   child: Text('Я понимаю',
                                       style: TextStyle(color: Colors.red))),
                             ]),
-                            'Я не хочу', Align(alignment: Alignment.center, child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text('Я не хочу, отмена',
-                                style: TextStyle(color: Colors.black)))));
+                            'Я не хочу',
+                            Align(
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('Я не хочу, отмена',
+                                        style:
+                                            TextStyle(color: Colors.black)))));
                       },
                     )
                   ],
@@ -1607,7 +1620,7 @@ class _AnonTestState extends State<AnonTest> {
     await Future.delayed(Duration(seconds: 2));
 
     setState(() {
-      //todo: list = List.generate(random.nextInt(10), (i) => "Item $i");
+      generateNewNumbers();
     });
 
     return null;
@@ -1710,17 +1723,32 @@ class Personal extends StatelessWidget {
                               style: TextStyle(fontSize: 24),
                             ),
                             onTap: () {
-                              TextEditingController textController = TextEditingController();
+                              TextEditingController textController =
+                                  TextEditingController();
 
-                              _showMyDialog(context, Text('Смена имени'), 'Какое новое имя предпочитаете?', Padding(padding: EdgeInsets.all(10),
-                                  child: SizedBox(width: 300, height: 100, child: TestAnimWidget(textController: textController, context: context,))),
-                                "", Row(children: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop(); },
-                                  child: Text('Отменить', style: TextStyle(color: Colors.black)))
-                                  ])
-                              );
+                              _showMyDialog(
+                                  context,
+                                  Text('Смена имени'),
+                                  'Какое новое имя предпочитаете?',
+                                  Padding(
+                                      padding: EdgeInsets.all(10),
+                                      child: SizedBox(
+                                          width: 300,
+                                          height: 100,
+                                          child: TestAnimWidget(
+                                            textController: textController,
+                                            context: context,
+                                          ))),
+                                  "",
+                                  Row(children: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('Отменить',
+                                            style:
+                                                TextStyle(color: Colors.black)))
+                                  ]));
                             })),
                     Divider(
                       thickness: 4,
@@ -1746,24 +1774,26 @@ class TestAnimWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _TestAnimWidgetState();
 }
 
-class _TestAnimWidgetState extends State<TestAnimWidget> with SingleTickerProviderStateMixin {
-
+class _TestAnimWidgetState extends State<TestAnimWidget>
+    with SingleTickerProviderStateMixin {
   AnimationController controller;
   @override
   void initState() {
-    controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    controller = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation =
-    Tween(begin: 0.0, end: 24.0).chain(CurveTween(curve: Curves.elasticIn)).animate(controller)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          controller.reverse();
-        }
-      });
+    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 24.0)
+        .chain(CurveTween(curve: Curves.elasticIn))
+        .animate(controller)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              controller.reverse();
+            }
+          });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1773,44 +1803,51 @@ class _TestAnimWidgetState extends State<TestAnimWidget> with SingleTickerProvid
           AnimatedBuilder(
               animation: offsetAnimation,
               builder: (buildContext, child) {
-                if (offsetAnimation.value < 0.0) print('${offsetAnimation.value + 8.0}');
+                if (offsetAnimation.value < 0.0)
+                  print('${offsetAnimation.value + 8.0}');
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: 24.0),
-                  padding: EdgeInsets.only(left: offsetAnimation.value + 24.0, right: 24.0 - offsetAnimation.value),
-                  child: Center(child: TextField(controller: widget.textController, )),
+                  padding: EdgeInsets.only(
+                      left: offsetAnimation.value + 24.0,
+                      right: 24.0 - offsetAnimation.value),
+                  child: Center(
+                      child: TextField(
+                    controller: widget.textController,
+                  )),
                 );
               }),
-          TextButton(onPressed: () {
-            if (widget.textController.value.text.isEmpty)
-              controller.forward(from: 0.0);
-            else
-              {
-
-              bool ok = false;
+          TextButton(
+            onPressed: () {
+              if (widget.textController.value.text.isEmpty)
+                controller.forward(from: 0.0);
+              else {
+                bool ok = false;
                 isNetworkAvailable()
                     .then((value) => ok = value)
                     .whenComplete(() {
                   if (ok) {
-                    fetchSetName(globals.id, widget.textController.value.text).then((value) {
+                    fetchSetName(globals.id, widget.textController.value.text)
+                        .then((value) {
                       ok = value['args'][0] == 'Ok';
                       if (ok) {
                         globals.username = value['args'][1];
                         Navigator.of(widget.context).pop();
-                        Navigator.of(widget.context).pushReplacement(_createRoute(Personal())).then((value) => setState(() {}));
+                        Navigator.of(widget.context)
+                            .pushReplacement(_createRoute(Personal()))
+                            .then((value) => setState(() {}));
                       }
                     });
-                  }}
-                );
+                  }
+                });
               }
-          },
-            child: Text('Сменить', style: TextStyle(color: Colors.black)),)
+            },
+            child: Text('Сменить', style: TextStyle(color: Colors.black)),
+          )
         ],
       ),
     );
   }
 }
-
-
 
 class _Photo {
   _Photo({this.id, this.assetName, this.title, this.subtitle, this.liked});
@@ -1875,7 +1912,7 @@ class _GridDemoPhotoItem extends StatelessWidget {
     final Widget image = Material(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       clipBehavior: Clip.antiAlias,
-     /* child: Image.memory(
+      /* child: Image.memory(
         photo.image240.bytes, //todo: sas
         fit: BoxFit.cover,
       ),*/
@@ -1958,15 +1995,12 @@ Iterable<String> generateNames(int index) sync* {
 }
 
 Iterable<MyPhoto> generatePhotos() sync* {
-    while (true) {
-
+  while (true) {
     int id;
     var photo;
     fetchRandomPhoto().then((value) {
       id = int.parse(value['args'][0]);
-    })
-    .whenComplete(() {
-
+    }).whenComplete(() {
       int likes;
       bool liked;
       int authorId;
@@ -1980,41 +2014,39 @@ Iterable<MyPhoto> generatePhotos() sync* {
       var val;
       fetchOriginalPhoto(id, globals.isLoggedIn ? globals.id : -1)
           .then((value) {
+        ok = value['args'][0] == 'Ok';
+        val = value;
+      }).whenComplete(() {
+        if (ok) {
+          likes = int.parse(val['args'][1]);
+          liked = val['args'][2] == '1';
+          authorId = int.parse(val['args'][3]);
+          authorName = val['args'][4];
+          text = val['args'][5];
+          orig = decodeImage(val['args'][6]);
+
+          fetch240Photo(id).then((value) {
             ok = value['args'][0] == 'Ok';
             val = value;
-      })
-          .whenComplete(() {
-            if(ok){
-              likes = int.parse(val['args'][1]);
-              liked = val['args'][2] == '1';
-              authorId = int.parse(val['args'][3]);
-              authorName = val['args'][4];
-              text = val['args'][5];
-              orig = decodeImage(val['args'][6]);
+          }).whenComplete(() {
+            if (ok) {
+              im240 = decodeImage(val['args'][1]);
 
-              fetch240Photo(id).then((value) {
+              fetchAvatar(authorId, 120).then((value) {
                 ok = value['args'][0] == 'Ok';
                 val = value;
               }).whenComplete(() {
-                if(ok)
-                  {
-                    im240 = decodeImage(val['args'][1]);
+                authAvatar = decodeImage(val['args'][1]);
 
-                    fetchAvatar(authorId, 120).then((value) {
-                      ok = value['args'][0] == 'Ok';
-                      val = value;
-                    }).whenComplete(() {
-                      authAvatar = decodeImage(val['args'][1]);
-
-                      photo = MyPhoto(authorId, orig, likes, text, id, authorName, im240, authAvatar, liked);
-
-                    });
-                  }
+                photo = MyPhoto(authorId, orig, likes, text, id, authorName,
+                    im240, authAvatar, liked);
               });
             }
+          });
+        }
       });
     });
-      yield photo;
+    yield photo;
   }
 }
 
@@ -2038,10 +2070,13 @@ class GridListDemo extends StatelessWidget {
           }
 
           return new Card(
-              child: new GridTile(
-            child: _GridDemoPhotoItem(
+            child: new GridTile(
+              child: _GridDemoPhotoItem(
 //todo:                photo: _data[index]
-                photo: _Photo(assetName: _data[ii], id: index, liked: random.nextBool())),
+                  photo: _Photo(
+                      assetName: _data[ii],
+                      id: index,
+                      liked: random.nextBool())),
             ),
           );
         });
@@ -2053,7 +2088,7 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
     Key key,
     @required this.photo,
   }) : super(key: key);
- //todo: final MyPhoto photo;
+  //todo: final MyPhoto photo;
   final _Photo photo;
 
   @override
@@ -2061,7 +2096,7 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
     final Widget image = Material(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       clipBehavior: Clip.antiAlias,
-     /* todo: child: Image.memory(
+      /* todo: child: Image.memory(
         photo.image240.bytes, //todo: sas
         fit: BoxFit.cover,
       ),*/
@@ -2077,7 +2112,8 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) => ViewPhoto(
-                          photo: photo))), //id: photo.id, liked: photo.liked,))),
+                          photo:
+                              photo))), //id: photo.id, liked: photo.liked,))),
               debugPrint('${photo.id} clicked')
             },
         child: GridTile(
@@ -2098,8 +2134,23 @@ class GridListAuthorDemo extends StatelessWidget {
   final random = math.Random();
   @override
   Widget build(BuildContext context) {
+    /* return GridView.count(
+      crossAxisCount: 2,
+      children: List.generate(100, (index) {
+        final ii = index % 13;
+        if (index >= _data.length) {
+          _data.addAll(generateNames(index).take(10)); /*4*/
+        }
+        return new GridTile(
+          child: _GridDemoAuthorPhotoItem(
+              photo: _Photo(
+                  assetName: _data[ii], id: index, liked: random.nextBool())),
+        );
+      }),
+    );*/
+
     return GridView.builder(
-      // itemCount: _data.length,
+        itemCount: 35,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
         ),
@@ -2112,10 +2163,10 @@ class GridListAuthorDemo extends StatelessWidget {
 
           return new Card(
               child: new GridTile(
-                child: _GridDemoAuthorPhotoItem(
-                    photo: _Photo(
-                        assetName: _data[ii], id: index, liked: random.nextBool())),
-              ));
+            child: _GridDemoAuthorPhotoItem(
+                photo: _Photo(
+                    assetName: _data[ii], id: index, liked: random.nextBool())),
+          ));
         });
   }
 }
@@ -2218,45 +2269,52 @@ class _AddPhotoState extends State<AddPhoto> {
                           padding: EdgeInsets.all(15),
                           child: TextButton(
                             onPressed: () {
-                              if (_image == null)
-                                {
-                                  _showMyDialog(
-                                      context,
-                                      Text('Ошибка',
-                                          style: TextStyle(color: Colors.red)),
-                                      'Отсутствует фото для публикации',
-                                      null);
-                                }
-                              else
-                                {
-                                  if (!globals.isLoggedIn)
-                                    {
-                                      showAuthError(context);
+                              if (_image == null) {
+                                _showMyDialog(
+                                    context,
+                                    Text('Ошибка',
+                                        style: TextStyle(color: Colors.red)),
+                                    'Отсутствует фото для публикации',
+                                    null);
+                              } else {
+                                if (!globals.isLoggedIn) {
+                                  showAuthError(context);
+                                } else {
+                                  debugPrint('2119');
+                                  SendImage si = SendImage(
+                                      id: globals.id,
+                                      data: encodeImage(_image),
+                                      text: controller.text,
+                                      ext: 'jpeg');
+                                  bool ok = false;
+                                  fetchAddPhoto(si).then((value) {
+                                    ok = value['args'][0] == 'Ok';
+                                  }).whenComplete(() {
+                                    if (ok) {
+                                      _showMyDialog(
+                                          context,
+                                          Text("Успешно опубликовано"),
+                                          '',
+                                          null,
+                                          '',
+                                          TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context)
+                                                    .pushReplacement(
+                                                        _createRoute(
+                                                            AnonTest()));
+                                              },
+                                              child: Text(
+                                                  'Ура, хочу посмотреть в ленте',
+                                                  style: TextStyle(
+                                                      color: Colors.black))));
+                                    } else {
+                                      _showMyDialog(context, Text("Ошибка"),
+                                          'Что-то пошло не так', null);
                                     }
-                                  else
-                                    {
-                                        debugPrint('2119');
-                                        SendImage si = SendImage(id: globals.id, data: encodeImage(_image), text: controller.text, ext: 'jpeg');
-                                        bool ok = false;
-                                        fetchAddPhoto(si).then((value) {
-                                          ok = value['args'][0] == 'Ok';
-                                        })
-                                        .whenComplete(() {
-                                          if(ok)
-                                            {
-                                              _showMyDialog(context, Text("Успешно опубликовано"), '', null, '', TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pushReplacement(_createRoute(AnonTest()));
-                                                    },
-                                                  child: Text('Ура, хочу посмотреть в ленте', style: TextStyle(color: Colors.black))));
-
-                                            }
-                                          else {
-                                            _showMyDialog(context, Text("Ошибка"), 'Что-то пошло не так', null);
-                                          }
-                                        });
-                                    }
+                                  });
                                 }
+                              }
                             },
                             child: Container(
                               height: 30.0,
@@ -2315,7 +2373,6 @@ void showAuthError(BuildContext context) {
       ));
 }
 
-
 class ViewPhoto extends StatefulWidget {
   ViewPhoto(
       {Key key,
@@ -2339,7 +2396,6 @@ class _ViewPhotoState extends State<ViewPhoto> {
   int likes = -1;
   @override
   Widget build(BuildContext context) {
-
     //var likes = widget.photo.likes;
     name =
         widget.photo.assetName; //generateNames(widget.photo.id).take(1).first;
@@ -2429,7 +2485,8 @@ class _ViewPhotoState extends State<ViewPhoto> {
                               ),
                               Padding(
                                   padding: EdgeInsets.only(left: 20),
-                                  child: Text('Автор ${widget.photo.id % 13 + 1}')),
+                                  child: Text(
+                                      'Автор ${widget.photo.id % 13 + 1}')),
 //todo:                           child: Text(widget.photo.authorName)),
                               Expanded(child: Container()),
                               Expanded(
@@ -2446,12 +2503,12 @@ class _ViewPhotoState extends State<ViewPhoto> {
                                             showAuthError(context);
                                           } else {
 //todo:                                            fetchLikeDislike(widget.photo.id, widget.photo.authorId).then((value) {
-                                              if (widget.photo.liked)
-                                                likes--;
-                                              else
-                                                likes++;
-                                              widget.photo.liked =
-                                              !widget.photo.liked;
+                                            if (widget.photo.liked)
+                                              likes--;
+                                            else
+                                              likes++;
+                                            widget.photo.liked =
+                                                !widget.photo.liked;
 //todo:                                             widget.photo.changeLike();
 //                                            });
                                           }
@@ -2463,8 +2520,9 @@ class _ViewPhotoState extends State<ViewPhoto> {
                           ),
                         ),
                         ListTile(
-                            title: Text('Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
- //todo:                    title: Text(widget.photo.text))
+                            title: Text(
+                                'Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
+                        //todo:                    title: Text(widget.photo.text))
                       ],
                     )),
                   ],
