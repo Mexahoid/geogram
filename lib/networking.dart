@@ -86,7 +86,7 @@ Future<Map<String, dynamic>> fetchAvatar(int id, int px) async {
   Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
-  debugPrint("[Fetched $px avatar]");
+  //debugPrint("[Fetched $px avatar]");
   return test;
 }
 
@@ -101,9 +101,9 @@ Future<Map<String, dynamic>> fetchAuth(String login, String pass) async {
   return test;
 }
 
-Future<Map<String, dynamic>> fetchRandomPhoto() async {
+Future<Map<String, dynamic>> fetchRandomPhoto(int count) async {
   //debugPrint('[start fetch random photo]');
-  final url = Uri.parse(globals.address + 'photo/getrandomphoto');
+  final url = Uri.parse(globals.address + 'photo/getrandomphoto/$count');
   Response response = await get(url);
   String json = response.body;
   Map<String, dynamic> test = jsonDecode(json);
@@ -132,6 +132,7 @@ Future<Map<String, dynamic>> fetchLikeDislike(int photoId, int userId) async {
   Map<String, dynamic> test = jsonDecode(json);
   debugPrint('fetch likeDislike');
   debugPrint(test['args'][0]);
+  debugPrint(test['args'][1]);
   return test;
 }
 

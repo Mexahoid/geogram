@@ -22,69 +22,74 @@ import 'networking.dart';
 void main() => runApp(MyApp());
 
 void generateNewNumbers() {
-  for (int i = 0; i < 100; i++) {
-    fetchRandomPhoto().then((value) {
-      arr[i] = int.parse(value['args'][1]);
-      //debugPrint('$i done');
-    });
-  }
+    int zzz = 100;
+    fetchRandomPhoto(zzz).then((value) {
+      var arrr = value['args'];
+      for (int i = 0; i < zzz; i++) {
+        arr[i] = int.parse(arrr[i+1]);
+      }
+      debugPrint('random done');
 
+    });
+  myPhotos = <MyPhoto>[];
   fetchPhotoIds().then((value) {
     var tmp = value['args'];
     photoIds = List<int>.filled(tmp.length - 1, 0);
     for (int i = 1; i < tmp.length; i++) {
-      photoIds[i-1] = int.parse(value['args'][i]);
+      photoIds[i - 1] = int.parse(value['args'][i]);
     }
   }).whenComplete(() {
     allPhotos = List<MyPhoto>.filled(photoIds.length, null);
 
     for (int i = 0; i < photoIds.length; i++) {
       bool ok;
-      var val;
+      var authorId;
 
+      var photo;
       fetchOriginalPhoto(photoIds[i], globals.id).then((value) {
         ok = value['args'][0] == 'Ok';
-        val = value;
-        var photo;
+        //val = value;
 
         if (ok) {
           int likes = int.parse(value['args'][1]);
           bool liked = value['args'][2] == '1';
-          int authorId = int.parse(value['args'][3]);
+
+          if (liked) {
+            debugPrint('[]LIKED[]');
+          }
+
+          authorId = int.parse(value['args'][3]);
           String authorName = value['args'][4];
           String text = value['args'][5];
           String data = value['args'][6];
           var image = decodeImage(data);
-          photo = globals.MyPhoto(authorId, image, likes, text, photoIds[i], authorName, null, null, liked);
-          allPhotos[i] = photo;
 
+          photo = globals.MyPhoto(authorId, image, likes, text, photoIds[i],
+              authorName, image, image, liked);
+          allPhotos[i] = photo;
 
           if (globals.isLoggedIn) {
             if (allPhotos[i].authorId == globals.id) {
-                myPhotos.add(allPhotos[i]);
-                debugPrint('[MyPhoto found: ${allPhotos[i].id}]');
+              myPhotos.add(allPhotos[i]);
             }
           }
-
+/*
           fetch240Photo(photoIds[i]).then((vv) {
             ok = vv['args'][0] == 'Ok';
             if (ok) {
-              while(allPhotos[i] == null)
-                continue;
+              while (allPhotos[i] == null) continue;
               allPhotos[i].image240 = decodeImage(vv['args'][1]);
-              debugPrint('[Image240 init: ${allPhotos[i].id}]');
             }
-          });
-          fetchAvatar(authorId, 120).then((vvv) {
-            ok = vvv['args'][0] == 'Ok';
-            if (ok) {
-              while(allPhotos[i] == null)
-                continue;
-              allPhotos[i].authorAvatar = decodeImage(vvv['args'][1]);
-              debugPrint('[Avatar init: ${allPhotos[i].id}]');
-            }
-          });
+          });*/
         }
+      }).whenComplete(() {
+        fetchAvatar(authorId, 120).then((vvv) {
+          ok = vvv['args'][0] == 'Ok';
+          if (ok) {
+            while (allPhotos[i] == null) continue;
+            allPhotos[i].authorAvatar = decodeImage(vvv['args'][1]);
+          }
+        });
       });
     }
   });
@@ -752,8 +757,8 @@ class _AuthorizationState extends State<Authorization> {
                                     fetchAuth(login, password).then((value) {
                                       ok = value['args'][0] == 'Ok';
                                       if (ok) {
-                                        globals.id =
-                                            int.parse(value['args'][1]);
+                                        globals.id = int.parse(value['args'][1]);
+                                        debugPrint('[LOGIN ${globals.id}]');
                                         globals.username = value['args'][2];
                                       }
 
@@ -1799,22 +1804,38 @@ class _GridDemoPhotoItem extends StatelessWidget {
   }) : super(key: key);
 
   //todo: ...
-  final _Photo photo;
-  //final MyPhoto photo;
+  //final _Photo photo;
+  final MyPhoto photo;
 
   @override
   Widget build(BuildContext context) {
+    var _icon = photo != null && photo.liked
+        ? Icon(
+      Icons.favorite,
+      color: Colors.red,
+    )
+        : Icon(Icons.favorite_border);
+    if(photo != null && photo.liked)
+      debugPrint('LIKED: ${photo.text}, ${photo.id}, ${globals.id}');
     final Widget image = Material(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       clipBehavior: Clip.antiAlias,
-      /* child: Image.memory(
-        photo.image240.bytes, //todo: sas
-        fit: BoxFit.cover,
-      ),*/
+      child: (() {
+        if (photo != null)
+          return Image.memory(
+            photo.image240.bytes, //todo: sas
+            fit: BoxFit.cover,
+          );
+        else
+          return Image.asset(
+            'images/photo3.jpg',
+            fit: BoxFit.cover,
+          );
+      }()), /*
       child: Image.asset(
         photo.assetName,
         fit: BoxFit.cover,
-      ),
+      ),*/
     );
 
     return InkResponse(
@@ -1825,7 +1846,7 @@ class _GridDemoPhotoItem extends StatelessWidget {
                       builder: (context) => ViewPhoto(
                           photo:
                               photo))), //id: photo.id, liked: photo.liked,))),
-              debugPrint('${photo.id} clicked')
+              debugPrint('${photo != null ? photo.id : -1} clicked')
             },
         child: GridTile(
           footer: Material(
@@ -1841,12 +1862,17 @@ class _GridDemoPhotoItem extends StatelessWidget {
                     title: Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: getAvatarImage().image,
+                          //backgroundImage: getAvatarImage().image,
+                          backgroundImage: photo == null
+                              ? getAvatarImage().image
+                              : MemoryImage(photo.authorAvatar.bytes),
                           radius: 10,
                         ),
                         Expanded(child: Container()),
-                        Text('Автор ${photo.id % 13 + 1}'),
-//todo:                 Text(photo.authorName),
+                        //                       Text('Автор ${photo.id % 13 + 1}'),
+                        Text(photo == null
+                            ? 'Автор'
+                            : photo.authorName.substring(0, 11)),
                         (() {
                           if (globals.isLoggedIn) {
                             return Expanded(child: Container());
@@ -1854,17 +1880,16 @@ class _GridDemoPhotoItem extends StatelessWidget {
                           return Container();
                         }()),
                         (() {
-                          if (globals.isLoggedIn) {
+                          if (globals.isLoggedIn &&
+                              photo != null &&
+                              photo.authorId != globals.id) {
                             return IconButton(
                               padding: new EdgeInsets.all(0.0),
                               iconSize: 20,
-                              icon: photo.liked
-                                  ? Icon(
-                                      Icons.favorite,
-                                      color: Colors.red,
-                                    )
-                                  : Icon(Icons.favorite_border),
-                              onPressed: () {},
+                              icon: _icon,
+                              onPressed: () {
+
+                              },
                             );
                           }
                           return Container();
@@ -1889,66 +1914,10 @@ Iterable<String> generateNames(int index) sync* {
   }
 }
 
-Iterable<MyPhoto> generatePhotos() sync* {
-  while (true) {
-    int id;
-    var photo;
-    fetchRandomPhoto().then((value) {
-      id = int.parse(value['args'][0]);
-    }).whenComplete(() {
-      int likes;
-      bool liked;
-      int authorId;
-      String authorName;
-      String text;
-      MemoryImage orig;
-      MemoryImage im240;
-      MemoryImage authAvatar;
-
-      bool ok = false;
-      var val;
-      fetchOriginalPhoto(id, globals.isLoggedIn ? globals.id : -1)
-          .then((value) {
-        ok = value['args'][0] == 'Ok';
-        val = value;
-      }).whenComplete(() {
-        if (ok) {
-          likes = int.parse(val['args'][1]);
-          liked = val['args'][2] == '1';
-          authorId = int.parse(val['args'][3]);
-          authorName = val['args'][4];
-          text = val['args'][5];
-          orig = decodeImage(val['args'][6]);
-
-          fetch240Photo(id).then((value) {
-            ok = value['args'][0] == 'Ok';
-            val = value;
-          }).whenComplete(() {
-            if (ok) {
-              im240 = decodeImage(val['args'][1]);
-
-              fetchAvatar(authorId, 120).then((value) {
-                ok = value['args'][0] == 'Ok';
-                val = value;
-              }).whenComplete(() {
-                authAvatar = decodeImage(val['args'][1]);
-
-                photo = MyPhoto(authorId, orig, likes, text, id, authorName,
-                    im240, authAvatar, liked);
-              });
-            }
-          });
-        }
-      });
-    });
-    yield photo;
-  }
-}
-
 class GridListDemo extends StatelessWidget {
   //final _data = <MyPhoto>[];
-  final _data = <String>[];
-  final random = math.Random();
+  //final _data = <String>[];
+  //final random = math.Random();
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
@@ -1957,21 +1926,25 @@ class GridListDemo extends StatelessWidget {
           crossAxisCount: 2,
         ),
         itemBuilder: (BuildContext context, int index) {
-          final ii = index % 13;
+          //final ii = index % 13;
 
-          if (index >= _data.length) {
-            //_data.addAll(generatePhotos().take(2)); /*4*/
-            _data.addAll(generateNames(index).take(10)); /*4*/
-          }
+          //if (index >= _data.length) {
+          //_data.addAll(generatePhotos().take(2)); /*4*/
+          //  _data.addAll(generateNames(index).take(10)); /*4*/
+          //}
 
           return new Card(
             child: new GridTile(
               child: _GridDemoPhotoItem(
-//todo:                photo: _data[index]
-                  photo: _Photo(
+//todo:
+                photo: arr == null || allPhotos == null || arr[index] - 1 < 0
+                    ? null
+                    : allPhotos[arr[index] - 1],
+                /* photo: _Photo(
                       assetName: _data[ii],
                       id: index,
-                      liked: random.nextBool())),
+                      liked: random.nextBool())*/
+              ),
             ),
           );
         });
@@ -1983,23 +1956,28 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
     Key key,
     @required this.photo,
   }) : super(key: key);
-  //todo: final MyPhoto photo;
-  final _Photo photo;
+  //todo:
+  final MyPhoto photo;
+  //final _Photo photo;
 
   @override
   Widget build(BuildContext context) {
     final Widget image = Material(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-      clipBehavior: Clip.antiAlias,
-      /* todo: child: Image.memory(
-        photo.image240.bytes, //todo: sas
-        fit: BoxFit.cover,
-      ),*/
-      child: Image.asset(
-        photo.assetName,
-        fit: BoxFit.cover,
-      ),
-    );
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        clipBehavior: Clip.antiAlias,
+        //todo:
+        child: (() {
+          if (photo != null)
+            return Image.memory(
+              photo.image240.bytes, //todo: sas
+              fit: BoxFit.cover,
+            );
+          else
+            return Image.asset(
+              'images/photo3.jpg',
+              fit: BoxFit.cover,
+            );
+        }()));
 
     return InkResponse(
         onTap: () => {
@@ -2025,8 +2003,8 @@ class _GridDemoAuthorPhotoItem extends StatelessWidget {
 }
 
 class GridListAuthorDemo extends StatelessWidget {
-  final _data = <String>[];
-  final random = math.Random();
+  //final _data = <String>[];
+  //final random = math.Random();
   @override
   Widget build(BuildContext context) {
     /* return GridView.count(
@@ -2045,23 +2023,36 @@ class GridListAuthorDemo extends StatelessWidget {
     );*/
 
     return GridView.builder(
-        itemCount: arr.length,
+        itemCount: globals.myPhotos.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+          crossAxisCount: globals.myPhotos.length > 3 ? 2 : 1,
         ),
         itemBuilder: (BuildContext context, int index) {
-          final ii = index % 13;
+          /* final ii = index % 13;
 
           if (index >= _data.length) {
             _data.addAll(generateNames(index).take(10)); /*4*/
-          }
+          }*/
 
           return new Card(
+            child: new GridTile(
+              child: _GridDemoAuthorPhotoItem(
+                photo: arr == null || myPhotos == null ? null : myPhotos[index],
+                /* photo: _Photo(
+                      assetName: _data[ii],
+                      id: index,
+                      liked: random.nextBool())*/
+              ),
+            ),
+          );
+
+          /* return new Card(
               child: new GridTile(
             child: _GridDemoAuthorPhotoItem(
                 photo: _Photo(
                     assetName: _data[ii], id: index, liked: random.nextBool())),
-          ));
+          )
+          );*/
         });
   }
 }
@@ -2279,8 +2270,8 @@ class ViewPhoto extends StatefulWidget {
   //final int id;
   //final bool liked;
   // todo:
-  //final MyPhoto photo;
-  final _Photo photo;
+  final MyPhoto photo;
+  //final _Photo photo;
 
   @override
   _ViewPhotoState createState() => _ViewPhotoState();
@@ -2289,12 +2280,22 @@ class ViewPhoto extends StatefulWidget {
 class _ViewPhotoState extends State<ViewPhoto> {
   String name;
   int likes = -1;
+  bool liked;
+
+  IconData _icon;
   @override
   Widget build(BuildContext context) {
     //var likes = widget.photo.likes;
-    name =
-        widget.photo.assetName; //generateNames(widget.photo.id).take(1).first;
-    if (likes == -1) likes = widget.photo.id * 15;
+    liked = widget.photo != null && widget.photo.liked;
+
+    if(liked)
+      debugPrint('LIKED');
+
+    _icon = liked ? Icons.favorite : Icons.favorite_border;
+    //name = widget.photo.assetName; //generateNames(widget.photo.id).take(1).first;
+    if (likes == -1)
+      //likes = widget.photo.id * 15;
+      likes = widget.photo != null ? widget.photo.likes : 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -2358,8 +2359,10 @@ class _ViewPhotoState extends State<ViewPhoto> {
                       child: Container(
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage(name),
-// todo:                    image: widget.photo.image,
+                            //image: AssetImage(name),
+                            image: widget.photo != null
+                                ? widget.photo.image
+                                : AssetImage('images/photo3.jpg'),
                             fit: BoxFit.cover,
                           ),
                           color: const Color(0xff7c94b6),
@@ -2375,49 +2378,76 @@ class _ViewPhotoState extends State<ViewPhoto> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundImage: getAvatarImage().image,
-// todo:                        backgroundImage: widget.photo.authorAvatar,
+                                //                               backgroundImage: getAvatarImage().image,
+                                backgroundImage: widget.photo == null
+                                    ? getAvatarImage().image
+                                    : widget.photo.authorAvatar,
                               ),
                               Padding(
                                   padding: EdgeInsets.only(left: 20),
+//                                  child: Text('Автор ${widget.photo.id % 13 + 1}')),
                                   child: Text(
-                                      'Автор ${widget.photo.id % 13 + 1}')),
-//todo:                           child: Text(widget.photo.authorName)),
+                                      widget.photo != null
+                                          ? widget.photo.authorName
+                                          : 'Автор',
+                                      overflow: TextOverflow.clip,
+                                      softWrap: false)),
                               Expanded(child: Container()),
                               Expanded(
                                 flex: 3,
                                 child: ListTile(
                                     title: Text('Нравится: $likes'),
-                                    trailing: IconButton(
-                                      icon: Icon(widget.photo.liked
-                                          ? Icons.favorite
-                                          : Icons.favorite_border),
-                                      onPressed: () {
-                                        setState(() {
-                                          if (!globals.isLoggedIn) {
-                                            showAuthError(context);
-                                          } else {
-//todo:                                            fetchLikeDislike(widget.photo.id, widget.photo.authorId).then((value) {
-                                            if (widget.photo.liked)
-                                              likes--;
-                                            else
-                                              likes++;
-                                            widget.photo.liked =
-                                                !widget.photo.liked;
-//todo:                                             widget.photo.changeLike();
-//                                            });
-                                          }
-                                        });
-                                      },
-                                    )),
+                                    trailing: (() {
+                                      if (widget.photo != null &&
+                                          widget.photo.authorId != globals.id)
+                                        return IconButton(
+                                          icon: Icon(_icon),
+                                          onPressed: () {
+                                            if (!globals.isLoggedIn) {
+                                              showAuthError(context);
+                                            } else {
+                                              /*   if (liked)
+                                                  likes--;
+                                                else
+                                                  likes++;
+                                                liked = !liked;
+                                                widget.photo.likes = likes;
+*/
+                                              fetchLikeDislike(widget.photo.id,
+                                                      globals.id)
+                                                  .then((value) {
+                                                widget.photo.liked =
+                                                    value['args'][1] ==
+                                                        'Like added';
+                                                widget.photo.likes =
+                                                    int.parse(value['args'][2]);
+                                               for (int i = 0; i < globals.allPhotos.length; i++)
+                                                 if (globals.allPhotos[i] != null &&  globals.allPhotos[i].id == widget.photo.id) {
+                                                   globals.allPhotos[i].likes = widget.photo.likes;
+                                                   globals.allPhotos[i].liked = widget.photo.liked;
+                                                   break;
+                                                 }
+                                              }).whenComplete(() {
+                                                setState(() {
+                                                  liked = widget.photo.liked;
+                                                  likes = widget.photo.likes;
+                                                });
+                                              });
+                                            }
+                                          },
+                                        );
+                                      else
+                                        return null;
+                                    }())),
                               )
                             ],
                           ),
                         ),
                         ListTile(
-                            title: Text(
-                                'Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
-                        //todo:                    title: Text(widget.photo.text))
+                            //title: Text('Моя любимая фотка, Автор ${widget.photo.id % 13 + 1}™®©'))
+                            title: Text(widget.photo != null
+                                ? widget.photo.text
+                                : 'Моя любимая фотка'))
                       ],
                     )),
                   ],

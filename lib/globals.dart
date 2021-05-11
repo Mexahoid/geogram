@@ -9,16 +9,11 @@ class MyPhoto {
   final int authorId;
   MemoryImage image;
   MemoryImage image240;
-  final int likes;
+  int likes;
   final String authorName;
   bool liked;
   final String text;
   MemoryImage authorAvatar;
-
-  void changeLike()
-  {
-    liked = !liked;
-  }
 
   bool isReady()
   {
